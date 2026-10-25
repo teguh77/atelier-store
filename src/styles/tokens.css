@@ -1,0 +1,136 @@
+/*
+ * Design tokens.
+ *
+ * Two layers:
+ *   1. Raw CSS variables on :root. Some change per breakpoint (gutter,
+ *      section spacing, type sizes) or per theme (.theme-inverse).
+ *   2. Tailwind theme keys (@theme) that expose those variables as utilities,
+ *      e.g. bg-background, text-muted, border-line, px-gutter, ease-luxe.
+ *
+ * Breakpoints follow the reference layout: 768 (md), 1024 (lg), 1440 (xl).
+ */
+
+/* ---------- Tailwind theme ---------- */
+
+@theme {
+  /* Only the colors below exist. No default Tailwind palette, so every
+     color in the UI comes from this system. */
+  --color-*: initial;
+  --color-black: #000;
+  --color-white: #fff;
+  --color-focus: #337eff;
+  --color-error: #c00;
+  --color-success: #063;
+  --color-warning: #994d00;
+
+  /* Fonts. The --font-* variables are set by next/font in layout.tsx. */
+  --font-sans: var(--font-atelier-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-atelier-display), ui-serif, Georgia, serif;
+
+  /* Weights used by the type scale. */
+  --font-weight-light: 300;
+  --font-weight-book: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  /* Breakpoints: phone → md tablet → lg desktop → xl wide. */
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 90rem;
+  --breakpoint-2xl: initial;
+
+  /* Content widths (max-w-page, max-w-prose-narrow, max-w-panel). */
+  --container-page: 90rem;
+  --container-prose-narrow: 41rem;
+  --container-panel: 22.5rem;
+
+  /* Corners stay square. 2px is the only softening, used on buttons. */
+  --radius-xs: 2px;
+
+  /* Motion: one slow, decelerating curve for everything. */
+  --ease-luxe: cubic-bezier(0.5, 0, 0, 1);
+  --default-transition-duration: 300ms;
+  --default-transition-timing-function: cubic-bezier(0.5, 0, 0, 1);
+
+  /* Blur used behind translucent controls over imagery. */
+  --blur-glass: 15px;
+}
+
+/* Theme-dependent and breakpoint-dependent values are wired with `inline`
+   so the utilities read the live variable and flip inside .theme-inverse. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-subtle: var(--subtle);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-scrim: var(--scrim);
+  --color-glass: var(--glass);
+
+  /* Spacing keys: px-gutter, py-section, pt-header, h-header, gap-grid… */
+  --spacing-gutter: var(--gutter);
+  --spacing-section: var(--section-y);
+  --spacing-header: var(--header-height);
+  --spacing-grid: var(--grid-gap);
+}
+
+/* ---------- Raw variables ---------- */
+
+:root {
+  /* Color: light theme (default). Black on white, nothing else competes. */
+  --background: #fff;
+  --foreground: #000;
+  --canvas: #fbfbfb; /* behind product photography */
+  --subtle: #f9f9f9; /* secondary panels, drawers */
+  --muted: #767676; /* secondary text, disabled (4.5:1 on white) */
+  --line: rgb(0 0 0 / 0.15); /* hairline dividers and borders */
+  --scrim: rgb(0 0 0 / 0.4); /* modal backdrop */
+  --glass: color-mix(in srgb, #44494e 40%, transparent); /* over imagery */
+
+  /* Spacing. All steps are multiples of 4px, so Tailwind's default
+     --spacing (0.25rem) already covers them: p-1 = 4px … p-24 = 96px. */
+  --gutter: 1rem; /* page side padding: 16 / 32 / 64 */
+  --section-y: 3rem; /* vertical rhythm between page sections */
+  --grid-gap: 0.5rem; /* 12-column layout grid gap */
+  --header-height: 4.5rem; /* 72px fixed header */
+
+  /* Motion durations. */
+  --duration-fast: 300ms;
+  --duration-slow: 800ms;
+}
+
+@media (min-width: 48rem) {
+  :root {
+    --gutter: 2rem;
+    --section-y: 4rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  :root {
+    --gutter: 4rem;
+    --section-y: 6rem;
+  }
+}
+
+/* Inverse theme for a band, footer or panel: white on black.
+   Every token-based utility inside it flips automatically. */
+.theme-inverse {
+  --background: #000;
+  --foreground: #fff;
+  --canvas: #191919;
+  --subtle: #191919;
+  --muted: #a3a3a3;
+  --line: rgb(255 255 255 / 0.5);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Text sitting directly on photography: white type, no background. */
+.theme-on-media {
+  --foreground: #fff;
+  --line: rgb(255 255 255 / 0.5);
+  color: var(--foreground);
+}
