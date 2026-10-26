@@ -7,16 +7,12 @@ import { Hero } from "@/components/home/hero";
 import { ProductRail } from "@/components/home/product-rail";
 import { ServicesStrip } from "@/components/home/services-strip";
 import { Container } from "@/components/ui/container";
-import {
-  campaign,
-  categories,
-  featuredCollections,
-  hero,
-  newArrivals,
-  services,
-} from "@/lib/catalog";
+import { campaign, featuredCollections, hero, services } from "@/lib/catalog";
+import { getHomeCategories, getNewArrivals } from "@/lib/product-queries";
 
-export default function Home() {
+export default async function Home() {
+  const [newArrivals, categories] = await Promise.all([getNewArrivals(), getHomeCategories()]);
+
   return (
     <>
       <Hero {...hero} />

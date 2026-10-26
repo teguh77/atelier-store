@@ -1,8 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { products } from "@/lib/products";
-
-const knownSlugs = new Set(products.map((p) => p.slug));
+import { productExists } from "@/lib/product-queries";
 
 /*
  * Unknown product URLs get a real 404 status.
@@ -12,9 +10,9 @@ const knownSlugs = new Set(products.map((p) => p.slug));
  * before rendering, lets Next serve the not-found page with a 404 instead.
  * Rewriting to a path no route matches renders app/not-found.tsx as a 404.
  */
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const slug = request.nextUrl.pathname.split("/")[2];
-  if (slug && !knownSlugs.has(decodeURIComponent(slug))) {
+  if (slug && !(await productExists(decodeURIComponent(slug)))) {
     return NextResponse.rewrite(new URL("/404", request.url));
   }
   return NextResponse.next();

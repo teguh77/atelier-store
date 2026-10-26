@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { ProductRail } from "@/components/home/product-rail";
 import { ProductGallery } from "@/components/product/product-gallery";
@@ -8,28 +9,42 @@ import { PurchasePanel } from "@/components/product/purchase-panel";
 import { AccordionItem } from "@/components/ui/accordion";
 import { Container } from "@/components/ui/container";
 import { formatPrice } from "@/lib/format";
-import { categoryLabels, getProduct, getRelatedProducts, products } from "@/lib/products";
+import { getProductBySlug, getProductSlugs, getRelatedProducts } from "@/lib/product-queries";
 
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  const slugs = await getProductSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProductBySlug(slug);
   if (!product) return { title: "Product not found" };
   return { title: product.name, description: product.description };
 }
 
-export default async function ProductPage({ params }: PageProps<"/products/[slug]">) {
+/*
+ * The URL is read inside Suspense so the page shell doesn't depend on the
+ * URL. Next's instant navigation check flags URL data read outside Suspense.
+ */
+export default function ProductPage({ params }: PageProps<"/products/[slug]">) {
+  return (
+    <Suspense fallback={<div className="pt-header min-h-[70vh]" aria-busy="true" />}>
+      <ProductDetails params={params} />
+    </Suspense>
+  );
+}
+
+async function ProductDetails({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const category = categoryLabels[product.category];
-  const categoryHref = `/collections/${product.category}`;
+  const category = product.category.label;
+  const categoryHref = `/collections/${product.category.slug}`;
+  const relatedProducts = await getRelatedProducts(product.slug);
 
   return (
     <>
@@ -57,7 +72,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
         </Container>
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_28rem] xl:grid-cols-[minmax(0,1fr)_32rem]">
-          <ProductGallery name={product.name} category={product.category} />
+          <ProductGallery name={product.name} images={product.gallery} />
 
           {/* Product info. Sticks beside the gallery on desktop. */}
           <div className="px-gutter pb-section pt-8 lg:px-12 lg:pt-4">
@@ -111,7 +126,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       </div>
 
       <div className="border-t">
-        <ProductRail title="You may also like" products={getRelatedProducts(product)} />
+        <ProductRail title="You may also like" products={relatedProducts} />
       </div>
     </>
   );

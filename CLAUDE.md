@@ -36,7 +36,7 @@ src/proxy.ts              real 404 for unknown /products/* (page shell streams f
 src/components/ui/        Button/ButtonLink, Container/Section, TextLink, AccordionItem, UnsplashImage
 src/components/site/      SiteHeader (client: hides on scroll, transparent on PAGES_WITH_HERO, bag count), SiteFooter, NewsletterForm
 src/components/home/      Hero, FeaturedCollections, ProductRail, CampaignSplit, CategoryGrid, ServicesStrip
-src/components/product/   ProductCard, ProductGallery, ProductPlaceholder, PurchasePanel
+src/components/product/   ProductCard, ProductGallery, PurchasePanel
 src/lib/products.ts       DUMMY products: sizes with per-size stock, categories, stock helpers
 src/lib/catalog.ts        DUMMY homepage content (hero, collections, nav, footer)
 src/lib/bag.ts            bag stored in the browser (localStorage + useSyncExternalStore)
@@ -51,6 +51,18 @@ src/styles/               design tokens, base, typography, layout, components (l
 - **Database:** Drizzle on the Neon HTTP driver, which has no interactive transactions (switch to `neon-serverless` if you need them). Re-export every table from `src/db/schema/index.ts`.
 - **Auth:** the Better Auth `nextCookies()` plugin must stay last. Never import `server-only` in `auth.ts`, `env.ts` or `db/index.ts`, because the Better Auth command-line tool loads them outside Next.
 - Server code reads config from `env` (`src/lib/env.ts`, zod), not from `process.env`.
+
+## Database conventions
+
+- Products, categories and stock live in Postgres. Tables are in `src/db/schema/products.ts`. Read them only through `src/lib/product-queries.ts`, which caches with `'use cache'` and `cacheTag("products")`. After a write, call `updateTag("products")`.
+- Prices are integer cents (`price_cents`).
+- Stock is per size in `product_stock` (one row per product and size, `quantity` ≥ 0). It is not a variant table: no per-size price, SKU or image. One-size items use one row labelled `ONE_SIZE` ("One size").
+- `product_images` holds the extra gallery photos. The product's own `image_*` columns are the first photo, so the gallery is `[image, ...product_images]`.
+- `categories.show_on_home` controls the homepage category grid. Categories without it (currently accessories) don't appear there.
+- Schema changes: edit the schema, run `pnpm db:generate`, review the SQL, run `pnpm db:migrate`, and commit `drizzle/`. Use `db:push` only on a throwaway local database.
+- `pnpm db:seed` runs `src/db/seed.ts` with the data in `src/db/seed/data.ts`. The seed is idempotent and builds its own client, so it doesn't load `src/lib/env.ts`. The app itself never reads `src/db/seed/data.ts`.
+- `db.batch` on the Neon HTTP driver runs as one transaction. Use it for multi-statement writes that must be atomic.
+- `src/proxy.ts` checks slugs with the uncached `productExists()`. `'use cache'` doesn't work when called from the proxy, so don't use cached functions there.
 
 ## Done (frontend, dummy data)
 

@@ -1,12 +1,10 @@
 /*
  * Sample storefront content.
  *
- * Placeholder data for the homepage until products and collections come
- * from the database. Photography is from Unsplash (free to use under the
+ * Placeholder content for the homepage. Categories and products come from
+ * the database. Photography is from Unsplash (free to use under the
  * Unsplash License). Prices are in cents.
  */
-
-import { products, type Product } from "./products";
 
 export type Photo = {
   src: string;
@@ -92,8 +90,6 @@ export const featuredCollections: Collection[] = [
   },
 ];
 
-export const newArrivals: Product[] = products;
-
 export const campaign = {
   eyebrow: "In store",
   title: "Made for a closer look",
@@ -111,41 +107,6 @@ export const campaign = {
   cta: NavItem;
   image: Photo;
 };
-
-export const categories: Category[] = [
-  {
-    slug: "bags",
-    label: "Bags",
-    image: {
-      src: unsplash("1566150905458-1bf1fc113f0d"),
-      alt: "Pink leather chain bag on a white block",
-    },
-  },
-  {
-    slug: "shoes",
-    label: "Shoes",
-    image: {
-      src: unsplash("1560343090-f0409e92791a"),
-      alt: "Green suede brogue on a pastel set",
-    },
-  },
-  {
-    slug: "ready-to-wear",
-    label: "Ready-to-wear",
-    image: {
-      src: unsplash("1558769132-cb1aea458c5e"),
-      alt: "Rail of neutral knitwear beside dried pampas grass",
-    },
-  },
-  {
-    slug: "jewelry-watches",
-    label: "Jewelry & watches",
-    image: {
-      src: unsplash("1611591437281-460bfbe1220a"),
-      alt: "Gold bracelet set with small clear stones",
-    },
-  },
-];
 
 export const services = [
   {
