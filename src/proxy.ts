@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { productExists } from "@/lib/product-queries";
+import { isKnownProductSlug } from "@/lib/product-queries";
 
 /*
  * Unknown product URLs get a real 404 status.
@@ -11,11 +11,23 @@ import { productExists } from "@/lib/product-queries";
  * Rewriting to a path no route matches renders app/not-found.tsx as a 404.
  */
 export async function proxy(request: NextRequest) {
-  const slug = request.nextUrl.pathname.split("/")[2];
-  if (slug && !(await productExists(decodeURIComponent(slug)))) {
-    return NextResponse.rewrite(new URL("/404", request.url));
+  const raw = request.nextUrl.pathname.split("/")[2];
+  if (raw) {
+    const slug = safeDecode(raw);
+    if (slug === null || !(await isKnownProductSlug(slug))) {
+      return NextResponse.rewrite(new URL("/404", request.url));
+    }
   }
   return NextResponse.next();
+}
+
+/** Malformed escapes such as "%E0%A4%A" throw in decodeURIComponent. */
+function safeDecode(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
 }
 
 export const config = {

@@ -2,7 +2,12 @@ import { z } from "zod";
 
 const serverEnvSchema = z.object({
   DATABASE_URL: z.url(),
-  BETTER_AUTH_SECRET: z.string().min(32),
+  BETTER_AUTH_SECRET: z
+    .string()
+    .min(32)
+    .refine((secret) => !secret.startsWith("replace-with"), {
+      message: "BETTER_AUTH_SECRET is still the .env.example placeholder. Generate a real secret.",
+    }),
   BETTER_AUTH_URL: z.url(),
   NODE_ENV: z
     .enum(["development", "test", "production"])

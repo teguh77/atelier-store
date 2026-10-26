@@ -7,6 +7,7 @@ import { TextLink } from "@/components/ui/text-link";
 
 export const metadata: Metadata = {
   title: "Design system",
+  robots: { index: false, follow: false },
 };
 
 const colors = [

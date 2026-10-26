@@ -64,16 +64,23 @@ export async function getProductSlugs() {
 }
 
 /*
- * Uncached on purpose: 'use cache' doesn't work when called from proxy.ts,
- * and the proxy only needs a yes/no for one slug.
+ * For proxy.ts. 'use cache' doesn't work when called from the proxy, so this
+ * keeps a short-lived in-memory copy of the slugs instead. Otherwise every
+ * request to /products/* would query the database, including requests for
+ * random slugs.
  */
-export async function productExists(slug: string) {
-  const rows = await db
-    .select({ id: products.id })
-    .from(products)
-    .where(eq(products.slug, slug))
-    .limit(1);
-  return rows.length > 0;
+const SLUG_TTL_MS = 60_000;
+let knownSlugs: { slugs: Set<string>; expires: number } | null = null;
+
+export async function isKnownProductSlug(slug: string) {
+  if (!knownSlugs || knownSlugs.expires < Date.now()) {
+    const rows = await db.select({ slug: products.slug }).from(products);
+    knownSlugs = {
+      slugs: new Set(rows.map((r) => r.slug)),
+      expires: Date.now() + SLUG_TTL_MS,
+    };
+  }
+  return knownSlugs.slugs.has(slug);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {

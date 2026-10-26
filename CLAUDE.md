@@ -62,7 +62,9 @@ src/styles/               design tokens, base, typography, layout, components (l
 - Schema changes: edit the schema, run `pnpm db:generate`, review the SQL, run `pnpm db:migrate`, and commit `drizzle/`. Use `db:push` only on a throwaway local database.
 - `pnpm db:seed` runs `src/db/seed.ts` with the data in `src/db/seed/data.ts`. The seed is idempotent and builds its own client, so it doesn't load `src/lib/env.ts`. The app itself never reads `src/db/seed/data.ts`.
 - `db.batch` on the Neon HTTP driver runs as one transaction. Use it for multi-statement writes that must be atomic.
-- `src/proxy.ts` checks slugs with the uncached `productExists()`. `'use cache'` doesn't work when called from the proxy, so don't use cached functions there.
+- `src/proxy.ts` checks slugs with `isKnownProductSlug()`, a 60-second in-memory set. `'use cache'` doesn't work when called from the proxy, so don't use cached functions there.
+- Auth secret: `src/lib/env.ts` rejects the `.env.example` placeholder. Generate a real `BETTER_AUTH_SECRET` with `openssl rand -base64 32`.
+- Security headers (CSP, frame denial, HSTS and others) are set in `next.config.ts`. If you load a new script, font or image host, add it to the CSP there.
 
 ## Done (frontend, dummy data)
 
