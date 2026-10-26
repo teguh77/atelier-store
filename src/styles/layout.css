@@ -1,0 +1,219 @@
+/*
+ * Responsive layout primitives.
+ *
+ * Breakpoints: md 768px, lg 1024px, xl 1440px.
+ * Gutters: 16px phone, 32px tablet, 64px desktop (the --gutter token).
+ */
+
+/* Centered page column, max 1440px, side padding from the gutter token. */
+@utility page-container {
+  width: 100%;
+  max-width: var(--container-page);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* 12-column layout grid with an 8px gap. Place children with col-span-*. */
+@utility layout-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--grid-gap);
+}
+
+/* Product listing: 2 → 3 → 4 columns. Tiles touch, with no gap: each tile's
+   canvas background forms the grid, so photos carry the page. */
+@utility product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  @media (width >= 48rem) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  @media (width >= 64rem) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Product tile text block under the image: 24 / 16 / 32 padding. */
+@utility product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem 2rem;
+}
+
+/* Product image frame: 3:4 canvas, square packshot centered inside. */
+@utility media-product {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background-color: var(--canvas);
+  & > img,
+  & > picture,
+  & > video {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+  }
+}
+
+/* Editorial or lifestyle image filling its frame. Set the shape with
+   aspect-* (e.g. aspect-3/4, aspect-video); defaults to 3:4. */
+@utility media-cover {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  background-color: var(--canvas);
+  & > img,
+  & > picture,
+  & > video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Image settles from a slight zoom when it first renders. */
+@utility media-settle {
+  & img,
+  & video {
+    animation: media-settle var(--duration-slow) var(--ease-luxe) both;
+  }
+}
+
+@keyframes media-settle {
+  from {
+    transform: scale(1.2);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Full-viewport hero. Media fills it; copy sits in .hero-content. */
+@utility hero-bleed {
+  position: relative;
+  isolation: isolate;
+  height: 100svh;
+  min-height: 32rem;
+  overflow: hidden;
+  background-color: var(--canvas);
+  & > img,
+  & > picture,
+  & > video {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Hero copy anchored bottom-left, max 360px wide on desktop. */
+@utility hero-content {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem;
+  @media (width >= 64rem) {
+    box-sizing: content-box;
+    max-width: var(--container-panel);
+    padding: var(--gutter);
+  }
+}
+
+/* Fixed site header, 72px. Set data-transparent="true" over a hero, and
+   data-hidden="true" while the user scrolls down. */
+@utility site-header {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 40;
+  height: var(--header-height);
+  background-color: var(--background);
+  color: var(--foreground);
+  transition:
+    transform var(--duration-slow) var(--ease-luxe),
+    background-color var(--duration-slow) var(--ease-luxe),
+    color var(--duration-slow) var(--ease-luxe);
+  &[data-transparent="true"] {
+    --foreground: #fff;
+    background-color: transparent;
+  }
+  &[data-hidden="true"] {
+    transform: translateY(-100%);
+  }
+}
+
+/* Header row. Phone: logo left, actions right.
+   Desktop: nav | centered logo | actions. */
+@utility header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 100%;
+  @media (width >= 64rem) {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    & > :last-child {
+      justify-self: end;
+    }
+  }
+}
+
+/* Bar that sticks under the header (filters, sort, category tabs). */
+@utility sticky-bar {
+  position: sticky;
+  top: calc(var(--header-height) - 1px);
+  z-index: 30;
+  background-color: var(--background);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Horizontal scroll row (carousels): about 1.25 items per view on phone,
+   2.5 on tablet, 4 on desktop. Snaps on each item. */
+@utility scroll-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 80%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: var(--foreground) transparent;
+  & > * {
+    scroll-snap-align: start;
+  }
+  @media (width >= 48rem) {
+    grid-auto-columns: 40%;
+  }
+  @media (width >= 64rem) {
+    grid-auto-columns: 25%;
+  }
+}
+
+/* Hidden "skip to content" link that appears on keyboard focus. */
+@utility skip-link {
+  position: absolute;
+  left: var(--gutter);
+  top: 0.5rem;
+  z-index: 50;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--background);
+  color: var(--foreground);
+  transform: translateY(-200%);
+  &:focus-visible {
+    transform: none;
+  }
+}

@@ -1,0 +1,187 @@
+/*
+ * Type roles.
+ *
+ * Use these instead of combining text-*, font-*, leading-* and tracking-*
+ * by hand. Each role sets size, line height, weight, tracking and case,
+ * and grows once at the lg breakpoint (1024px).
+ *
+ * Rules:
+ * - The serif (font-display) is only for display-* roles: big, rare, uppercase.
+ * - Everything else is the sans. UI text is small (12–14px).
+ * - Titles and labels are uppercase. Body text is sentence case.
+ * - Hierarchy comes from size and case, not color. Use text-muted only for
+ *   secondary info.
+ */
+
+/* Display: editorial headlines over imagery. Serif, uppercase.
+   Tracking stays near zero: the high-contrast serif collides when tightened. */
+@utility type-display-l {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  line-height: 3.5rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  @media (width >= 64rem) {
+    font-size: 8.5rem;
+    line-height: 8rem;
+    letter-spacing: -0.015em;
+  }
+}
+
+@utility type-display-m {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  line-height: 3rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  @media (width >= 64rem) {
+    font-size: 6.5rem;
+    line-height: 6rem;
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Titles: page and section headings. Sans, uppercase. */
+@utility type-title-xxl {
+  font-size: 2.5rem;
+  line-height: 2.5rem;
+  font-weight: 300;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  @media (width >= 64rem) {
+    font-size: 4rem;
+    line-height: 4rem;
+    font-weight: 400;
+    letter-spacing: -0.03em;
+  }
+}
+
+@utility type-title-xl {
+  font-size: 2rem;
+  line-height: 2rem;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  @media (width >= 64rem) {
+    font-size: 3rem;
+    line-height: 3rem;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+  }
+}
+
+@utility type-title-l {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  @media (width >= 64rem) {
+    font-size: 2rem;
+    line-height: 2.5rem;
+  }
+}
+
+@utility type-title-m {
+  font-size: 1.25rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  @media (width >= 64rem) {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+}
+
+/* Small bold caps: section labels, nav groups, card titles. */
+@utility type-title-s {
+  font-size: 0.875rem;
+  line-height: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  @media (width >= 64rem) {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    letter-spacing: 0.03em;
+  }
+}
+
+@utility type-title-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Lead paragraph: large and light. */
+@utility type-lead {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  @media (width >= 64rem) {
+    font-size: 2rem;
+    line-height: 3rem;
+  }
+}
+
+/* Body copy. Light by default, medium for emphasis. */
+@utility type-body {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 300;
+  letter-spacing: -0.2px;
+}
+
+@utility type-body-medium {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+/* Small UI text: product names, prices, helper text, nav links. */
+@utility type-small {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  letter-spacing: -0.2px;
+  @media (width >= 64rem) {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
+@utility type-small-medium {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  @media (width >= 64rem) {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
+/* Tiny overline: badges such as "new" or "limited". */
+@utility type-caption {
+  font-size: 0.625rem;
+  line-height: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Button and call-to-action label. */
+@utility type-label {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
