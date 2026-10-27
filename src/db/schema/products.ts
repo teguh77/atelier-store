@@ -48,6 +48,12 @@ export const products = pgTable(
     categoryId: integer("category_id")
       .notNull()
       .references(() => categories.id, { onDelete: "restrict" }),
+    /**
+     * Listed in the store. Hidden products (false) 404, leave listings and
+     * search, and can't be bought, but stay in admin and in past orders.
+     * Products can't be deleted once ordered, so this is how they're retired.
+     */
+    isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

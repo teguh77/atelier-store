@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Container } from "@/components/ui/container";
-import { useBagCount } from "@/lib/bag";
 import { cn } from "@/lib/cn";
 import type { NavItem } from "@/lib/catalog";
 
@@ -13,6 +12,8 @@ import { BagIcon, CloseIcon, MenuIcon, SearchIcon, UserIcon } from "./icons";
 
 type SiteHeaderProps = {
   nav: NavItem[];
+  /** Badge + screen-reader count, rendered on the server from the cart cookie. */
+  bagCount?: ReactNode;
 };
 
 /** Pages that open with a full-bleed image under the header. */
@@ -24,9 +25,17 @@ const PAGES_WITH_HERO = new Set(["/"]);
  * - Slides away while scrolling down, comes back when scrolling up.
  * - Below 1024px the nav moves into a full-screen menu.
  */
-export function SiteHeader({ nav }: SiteHeaderProps) {
-  const overMedia = PAGES_WITH_HERO.has(usePathname());
-  const bagCount = useBagCount();
+export function SiteHeader(props: SiteHeaderProps) {
+  return <SiteHeaderView {...props} pathname={usePathname()} />;
+}
+
+/**
+ * The header itself. `pathname` is null while a dynamic route prerenders
+ * (the URL isn't known yet): the header is then solid, never over a hero.
+ * Used as the Suspense fallback around SiteHeader in the store layout.
+ */
+export function SiteHeaderView({ nav, bagCount, pathname }: SiteHeaderProps & { pathname: string | null }) {
+  const overMedia = pathname !== null && PAGES_WITH_HERO.has(pathname);
   const [atTop, setAtTop] = useState(true);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -108,31 +117,21 @@ export function SiteHeader({ nav }: SiteHeaderProps) {
 
             <ul className="flex items-center gap-5 md:gap-6">
               <li>
-                <button type="button" className="btn-icon" aria-label="Search">
+                <Link href="/search" className="btn-icon" aria-label="Search">
                   <SearchIcon />
-                </button>
+                </Link>
               </li>
               <li className="hidden md:block">
-                <button type="button" className="btn-icon" aria-label="Account">
+                <Link href="/account" className="btn-icon" aria-label="Account">
                   <UserIcon />
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  className="btn-icon relative"
-                  aria-label={`Shopping bag, ${bagCount} ${bagCount === 1 ? "item" : "items"}`}
-                >
+                <Link href="/bag" className="btn-icon relative">
                   <BagIcon />
-                  {bagCount > 0 && (
-                    <span
-                      className="type-caption absolute right-1 top-1.5 flex min-w-4 items-center justify-center rounded-full bg-foreground px-1 leading-4 text-background"
-                      aria-hidden="true"
-                    >
-                      {bagCount > 99 ? "99+" : bagCount}
-                    </span>
-                  )}
-                </button>
+                  <span className="sr-only">Shopping bag</span>
+                  {bagCount}
+                </Link>
               </li>
               <li className="lg:hidden">
                 <button

@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { addToBag, quantityInBag, useBag } from "@/lib/bag";
+import { QuantityStepper } from "@/components/ui/quantity-stepper";
+import { Spinner } from "@/components/ui/spinner";
+import { addToCart } from "@/lib/cart/actions";
 import { cn } from "@/lib/cn";
 import {
   isOneSize,
@@ -20,6 +22,8 @@ import {
  * - Sold-out sizes can't be selected.
  * - Quantity never exceeds the size's stock minus what's already in the bag,
  *   and a bag line is capped at MAX_PER_ITEM units.
+ * The stock shown here may be cached. The server action checks live stock
+ * and is the final word; its message is shown below the button.
  */
 export function PurchasePanel({ product }: { product: Product }) {
   const oneSize = isOneSize(product);
@@ -28,12 +32,14 @@ export function PurchasePanel({ product }: { product: Product }) {
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const sizesRef = useRef<HTMLFieldSetElement>(null);
-  const bag = useBag();
+  // Units in the bag per size, as last reported by the server.
+  const [inCartBySize, setInCartBySize] = useState<Record<string, number>>({});
+  const [pending, startTransition] = useTransition();
   const ids = useId();
 
   const productStock = totalStock(product);
   const selected = product.sizes.find((s) => s.label === size) ?? null;
-  const inBag = size ? quantityInBag(bag, product.slug, size) : 0;
+  const inBag = size ? (inCartBySize[size] ?? 0) : 0;
   const maxAddable = selected
     ? Math.max(0, Math.min(selected.stock - inBag, MAX_PER_ITEM - inBag))
     : MAX_PER_ITEM;
@@ -61,13 +67,20 @@ export function PurchasePanel({ product }: { product: Product }) {
       sizesRef.current?.querySelector<HTMLInputElement>("input:not(:disabled)")?.focus();
       return;
     }
-    if (maxAddable <= 0) return;
-    addToBag(product.slug, selected.label, qty);
-    setQuantity(1);
+    if (maxAddable <= 0 || pending) return;
     setError(null);
-    setConfirmation(
-      `Added to your bag: ${product.name}${oneSize ? "" : `, size ${selected.label}`}, quantity ${qty}.`,
-    );
+    const label = selected.label;
+    startTransition(async () => {
+      const result = await addToCart(product.slug, label, qty).catch(() => null);
+      if (!result) {
+        setError("We couldn't reach the bag just now. Check your connection and try again.");
+        return;
+      }
+      setInCartBySize((prev) => ({ ...prev, [label]: result.inCart }));
+      setQuantity(1);
+      if (result.ok) setConfirmation(result.message);
+      else setError(result.message);
+    });
   }
 
   const soldOut = productStock === 0;
@@ -143,38 +156,21 @@ export function PurchasePanel({ product }: { product: Product }) {
             <span className="type-title-xs" id={`${ids}-qty-label`}>
               Quantity
             </span>
-            <div
-              role="group"
-              aria-labelledby={`${ids}-qty-label`}
-              className="flex h-12 items-center border"
-            >
-              <button
-                type="button"
-                className="flex h-full w-12 items-center justify-center disabled:text-muted"
-                onClick={() => setQuantity(Math.max(1, qty - 1))}
-                disabled={qty <= 1 || maxAddable === 0}
-                aria-label="Decrease quantity"
-              >
-                <span aria-hidden="true">−</span>
-              </button>
-              <output className="type-small-medium w-10 text-center" aria-live="polite">
-                {maxAddable === 0 ? 0 : qty}
-              </output>
-              <button
-                type="button"
-                className="flex h-full w-12 items-center justify-center disabled:text-muted"
-                onClick={() => setQuantity(Math.min(maxAddable, qty + 1))}
-                disabled={qty >= maxAddable}
-                aria-label="Increase quantity"
-              >
-                <span aria-hidden="true">+</span>
-              </button>
-            </div>
+            <QuantityStepper
+              labelledBy={`${ids}-qty-label`}
+              value={maxAddable === 0 ? 0 : qty}
+              min={maxAddable === 0 ? 0 : 1}
+              max={maxAddable}
+              onChange={setQuantity}
+              disabled={pending}
+            />
           </div>
         )}
 
-        <Button block onClick={onAdd} disabled={soldOut || limitReached}>
-          {buttonLabel}
+        {/* Not `disabled` while adding, so the button keeps its fill. */}
+        <Button block onClick={onAdd} disabled={soldOut || limitReached} aria-busy={pending || undefined}>
+          {pending && <Spinner />}
+          {pending ? "Adding" : buttonLabel}
         </Button>
 
         <div aria-live="polite" className="min-h-5">
@@ -217,8 +213,14 @@ function StockLine({
     tone = "bg-muted";
     text = soldOut ? "Out of stock. This item is currently unavailable." : "Out of stock in this size";
   } else if (needsSize) {
-    tone = "bg-success";
-    text = "Available. Select a size to check stock.";
+    // No size picked yet: `state` is the whole product's stock (matches the listing card).
+    if (state.kind === "low-stock") {
+      tone = "bg-warning";
+      text = `Low stock: only ${state.left} left across all sizes. Select a size.`;
+    } else {
+      tone = "bg-success";
+      text = "Available. Select a size to check stock.";
+    }
   } else if (state.kind === "low-stock") {
     tone = "bg-warning";
     text = state.left === 1 ? "Low stock: only 1 left" : `Low stock: only ${state.left} left`;

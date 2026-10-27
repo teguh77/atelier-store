@@ -139,6 +139,13 @@
     border-bottom-width: 2px;
     margin-bottom: -1px;
   }
+  /* Invalid fields keep the same shape; only the rule turns red. */
+  &[aria-invalid="true"] {
+    border-bottom-color: var(--color-error);
+  }
+  &:disabled {
+    color: var(--muted);
+  }
 }
 
 /* ---------- Links ---------- */

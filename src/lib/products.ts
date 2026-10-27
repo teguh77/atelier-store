@@ -47,6 +47,15 @@ export type StockState =
   | { kind: "low-stock"; left: number }
   | { kind: "out-of-stock" };
 
+/**
+ * Whole-product availability for listings (cards): sold out when no size has
+ * stock, low when only a few units are left across all sizes. Same rule and
+ * threshold as the product page and the admin.
+ */
+export function productAvailability(product: Product): StockState {
+  return stockState(totalStock(product));
+}
+
 export function stockState(stock: number): StockState {
   if (stock <= 0) return { kind: "out-of-stock" };
   if (stock <= LOW_STOCK_THRESHOLD) return { kind: "low-stock", left: stock };

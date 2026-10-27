@@ -1,4 +1,4 @@
-import { asc, eq, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, type SQL } from "drizzle-orm";
 import { cacheTag } from "next/cache";
 
 import { db } from "@/db";
@@ -42,15 +42,18 @@ function toProduct(row: ProductRow): Product {
   };
 }
 
-async function queryProducts(where?: SQL) {
+/** Storefront reads: listed products only (is_active). */
+const listed = eq(products.isActive, true);
+
+async function queryProducts(where?: SQL, orderBy: SQL[] = [asc(products.id)]) {
   const rows = await db.query.products.findMany({
-    where,
+    where: where ? and(listed, where) : listed,
     with: {
       category: true,
       stock: { orderBy: [asc(productStock.sortOrder)] },
       images: { orderBy: [asc(productImages.sortOrder)] },
     },
-    orderBy: [asc(products.id)],
+    orderBy,
   });
   return rows.map(toProduct);
 }
@@ -59,7 +62,18 @@ export async function getProductSlugs() {
   "use cache";
   cacheTag("products");
 
-  const rows = await db.select({ slug: products.slug }).from(products).orderBy(asc(products.id));
+  const rows = await db.select({ slug: products.slug }).from(products).where(listed).orderBy(asc(products.id));
+  return rows.map((r) => r.slug);
+}
+
+export async function getCategorySlugs() {
+  "use cache";
+  cacheTag("products");
+
+  const rows = await db
+    .select({ slug: categories.slug })
+    .from(categories)
+    .orderBy(asc(categories.sortOrder));
   return rows.map((r) => r.slug);
 }
 
@@ -70,18 +84,45 @@ export async function getProductSlugs() {
  * random slugs.
  */
 const SLUG_TTL_MS = 60_000;
-let knownSlugs: { slugs: Set<string>; expires: number } | null = null;
 
-export async function isKnownProductSlug(slug: string) {
-  if (!knownSlugs || knownSlugs.expires < Date.now()) {
-    const rows = await db.select({ slug: products.slug }).from(products);
-    knownSlugs = {
-      slugs: new Set(rows.map((r) => r.slug)),
-      expires: Date.now() + SLUG_TTL_MS,
-    };
-  }
-  return knownSlugs.slugs.has(slug);
+type SlugCache = { slugs: Set<string>; expires: number } | null;
+
+/*
+ * Kept on globalThis, not in module scope: the proxy is bundled separately
+ * from pages and server actions, so a module-level cache would give each its
+ * own copy and forgetKnownSlugs() (called from admin actions) would never
+ * reach the proxy's. globalThis is shared within one server process.
+ */
+const slugCaches: Map<string, SlugCache> = ((globalThis as { __atelierSlugCaches?: Map<string, SlugCache> })
+  .__atelierSlugCaches ??= new Map());
+
+function createSlugChecker(name: string, loadSlugs: () => Promise<string[]>) {
+  return async (slug: string) => {
+    let known = slugCaches.get(name);
+    if (!known || known.expires < Date.now()) {
+      known = { slugs: new Set(await loadSlugs()), expires: Date.now() + SLUG_TTL_MS };
+      slugCaches.set(name, known);
+    }
+    return known.slugs.has(slug);
+  };
 }
+
+/**
+ * Call after an admin adds, renames, hides or lists a product or category,
+ * so the proxy on this server process sees the change on the next request.
+ * Other server processes catch up within SLUG_TTL_MS.
+ */
+export function forgetKnownSlugs() {
+  slugCaches.clear();
+}
+
+export const isKnownProductSlug = createSlugChecker("products", async () =>
+  (await db.select({ slug: products.slug }).from(products).where(listed)).map((r) => r.slug),
+);
+
+export const isKnownCategorySlug = createSlugChecker("categories", async () =>
+  (await db.select({ slug: categories.slug }).from(categories)).map((r) => r.slug),
+);
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   "use cache";
@@ -107,11 +148,32 @@ export async function getRelatedProducts(slug: string, limit = 8): Promise<Produ
   ].slice(0, limit);
 }
 
-export async function getNewArrivals(): Promise<Product[]> {
+/** Every product, by id. Search filters this list. */
+export async function getAllProducts(): Promise<Product[]> {
   "use cache";
   cacheTag("products");
 
   return queryProducts();
+}
+
+/** A category's products (by id) with its label. Null when the slug is unknown. */
+export async function getCategoryCollection(slug: string) {
+  "use cache";
+  cacheTag("products");
+
+  const category = await db.query.categories.findFirst({ where: eq(categories.slug, slug) });
+  if (!category) return null;
+
+  const items = await queryProducts(eq(products.categoryId, category.id));
+  return { label: category.label, products: items };
+}
+
+/** Newest first. Products seeded in one batch share created_at, so id breaks the tie. */
+export async function getNewArrivals(): Promise<Product[]> {
+  "use cache";
+  cacheTag("products");
+
+  return queryProducts(undefined, [desc(products.createdAt), desc(products.id)]);
 }
 
 /** Categories shown as tiles in the homepage grid, in display order. */

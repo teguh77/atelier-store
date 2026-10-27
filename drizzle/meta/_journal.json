@@ -15,6 +15,27 @@
       "when": 1792982740042,
       "tag": "0001_fuzzy_lily_hollister",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793006592453,
+      "tag": "0002_dizzy_moon_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793030863007,
+      "tag": "0003_lucky_warbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793054673408,
+      "tag": "0004_faithful_ravenous",
+      "breakpoints": true
     }
   ]
 }

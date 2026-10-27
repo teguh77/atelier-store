@@ -17,7 +17,8 @@ const contentSecurityPolicy = [
   `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  // Checkout posts to a server action that redirects to Stripe's hosted page.
+  "form-action 'self' https://checkout.stripe.com",
   "frame-ancestors 'none'",
 ].join("; ");
 
